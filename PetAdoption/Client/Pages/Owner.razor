@@ -1,0 +1,122 @@
+﻿@page "/owners"
+@using PetAdoption.Client.Services
+@using PetAdoption.Shared
+@inject OwnerService OwnerService
+
+<h3 class="text-center mb-4">Pet Owners</h3>
+
+@if (owners == null)
+{
+    <div class="alert alert-info text-center">
+        <strong>Loading...</strong>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Id</th>
+                    <th>Pet Id</th>
+                    <th>Owner Name</th>
+                    <th>Adoption Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var owner in owners)
+                {
+                    <tr>
+                        <td>@owner.Id</td>
+                        <td>@owner.PetId</td>
+                        <td>@owner.OwnerName</td>
+                        <td>@owner.AdoptionDate.ToShortDateString()</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" @onclick="() => LoadOwnerForUpdate(owner)">Edit</button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteOwner(owner.Id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<hr />
+
+<h4 class="mb-3">@((isUpdating ? "Update Owner" : "Add Owner"))</h4>
+<EditForm Model="currentOwner" OnValidSubmit="@(isUpdating ? UpdateOwner : AddOwner)">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Pet Id:</label>
+        @if (isUpdating)
+        {
+            <span class="form-control-plaintext">@currentOwner.PetId</span>
+        }
+        else
+        {
+            <InputNumber class="form-control" @bind-Value="currentOwner.PetId" />
+        }
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Owner Name:</label>
+        <InputText class="form-control" @bind-Value="currentOwner.OwnerName" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Adoption Date:</label>
+        <InputDate class="form-control" @bind-Value="currentOwner.AdoptionDate" />
+    </div>
+    <button type="submit" class="btn btn-primary">@((isUpdating ? "Update" : "Add") + " Owner")</button>
+</EditForm>
+
+@code {
+    private List<OwnerModel> owners;
+    private OwnerModel currentOwner = new OwnerModel();
+    private bool isUpdating = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOwnersAsync();
+    }
+
+    private async Task LoadOwnersAsync()
+    {
+        owners = await OwnerService.GetOwnersAsync();
+    }
+
+    private async Task AddOwner()
+    {
+        await OwnerService.AddOwnerAsync(currentOwner);
+        ResetCurrentOwner();
+        await LoadOwnersAsync();
+    }
+
+    private async Task UpdateOwner()
+    {
+        await OwnerService.UpdateOwnerAsync(currentOwner.Id, currentOwner);
+        ResetCurrentOwner();
+        isUpdating = false;
+        await LoadOwnersAsync();
+    }
+
+    private void LoadOwnerForUpdate(OwnerModel owner)
+    {
+        currentOwner = owner;
+        isUpdating = true;
+    }
+
+    private async Task DeleteOwner(int id)
+    {
+        await OwnerService.DeleteOwnerAsync(id);
+        await LoadOwnersAsync();
+    }
+
+    private void ResetCurrentOwner()
+    {
+        currentOwner = new OwnerModel();
+        isUpdating = false;
+    }
+}

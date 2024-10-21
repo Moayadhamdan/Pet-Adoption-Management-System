@@ -1,0 +1,135 @@
+﻿@page "/pets"
+@using PetAdoption.Client.Services
+@using PetAdoption.Shared
+@inject PetService PetService
+
+<h3 class="text-center mb-4">Pets</h3>
+
+@if (pets == null)
+{
+    <div class="alert alert-info text-center">
+        <strong>Loading...</strong>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Id</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Breed</th>
+                    <th>Adoption Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var pet in pets)
+                {
+                    <tr>
+                        <td>@pet.Id</td>
+                        <td>@pet.Name</td>
+                        <td>@pet.Age</td>
+                        <td>@pet.Breed</td>
+                        <td>@pet.AdoptionStatus</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" @onclick="() => LoadPetForUpdate(pet)">Edit</button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeletePet(pet.Id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<hr />
+
+<h4 class="mb-3">@((isUpdating ? "Update Pet" : "Add Pet"))</h4>
+<EditForm Model="currentPet" OnValidSubmit="@(isUpdating ? UpdatePet : AddPet)">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Name:</label>
+        <InputText class="form-control" @bind-Value="currentPet.Name" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Age:</label>
+        <InputNumber class="form-control" @bind-Value="currentPet.Age" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Breed:</label>
+        <InputText class="form-control" @bind-Value="currentPet.Breed" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Adoption Status:</label>
+        @if (!isUpdating)
+        {
+            <InputSelect class="form-select" @bind-Value="currentPet.AdoptionStatus">
+                <option value="Available">Available</option> // Only available option in Add mode
+            </InputSelect>
+        }
+        else
+        {
+            <InputSelect class="form-select" @bind-Value="currentPet.AdoptionStatus">
+                <option value="">Select Status</option>
+                <option value="Available">Available</option>
+                <option value="Adopted">Adopted</option>
+            </InputSelect>
+        }
+    </div>
+    <button type="submit" class="btn btn-primary">@((isUpdating ? "Update" : "Add") + " Pet")</button>
+</EditForm>
+
+@code {
+    private List<PetModel> pets;
+    private PetModel currentPet = new PetModel();
+    private bool isUpdating = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPetsAsync();
+    }
+
+    private async Task LoadPetsAsync()
+    {
+        pets = await PetService.GetPetsAsync();
+    }
+
+    private async Task AddPet()
+    {
+        currentPet.AdoptionStatus = "Available";
+        await PetService.AddPetAsync(currentPet);
+        ResetCurrentPet();
+        await LoadPetsAsync();
+    }
+
+    private async Task UpdatePet()
+    {
+        await PetService.UpdatePetAsync(currentPet.Id, currentPet);
+        ResetCurrentPet(); 
+        isUpdating = false; 
+        await LoadPetsAsync(); 
+    }
+
+    private void LoadPetForUpdate(PetModel pet)
+    {
+        currentPet = pet; 
+        isUpdating = true; 
+    }
+
+    private async Task DeletePet(int id)
+    {
+        await PetService.DeletePetAsync(id);
+        await LoadPetsAsync(); 
+    }
+
+    private void ResetCurrentPet()
+    {
+        currentPet = new PetModel(); 
+        isUpdating = false; 
+    }
+}

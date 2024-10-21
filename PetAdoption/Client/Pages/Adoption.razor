@@ -1,0 +1,159 @@
+﻿@page "/adoptions"
+@using PetAdoption.Client.Services
+@using PetAdoption.Shared
+@inject AdoptionService AdoptionService
+
+<h3 class="text-center mb-4">Adoption Requests</h3>
+
+@if (adoptions == null)
+{
+    <div class="alert alert-info text-center">
+        <strong>Loading...</strong>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Id</th>
+                    <th>Pet Id</th>
+                    <th>Requester Name</th>
+                    <th>Request Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var adoption in adoptions)
+                {
+                    <tr>
+                        <td>@adoption.Id</td>
+                        <td>@adoption.PetId</td>
+                        <td>@adoption.RequesterName</td>
+                        <td>@adoption.RequestDate.ToShortDateString()</td>
+                        <td>@adoption.Status</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" @onclick="() => LoadAdoptionForUpdate(adoption)">Edit</button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteAdoption(adoption.Id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (isUpdating || currentAdoption != null)
+{
+    <hr />
+    <h4 class="mb-3">@((isUpdating ? "Update" : "Add") + " Adoption Request")</h4>
+    <EditForm Model="currentAdoption" OnValidSubmit="@(isUpdating ? UpdateAdoption : AddAdoption)">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        @if (isUpdating)
+        {
+            <div class="mb-3">
+                <label class="form-label">Id:</label>
+                <span class="form-control-plaintext">@currentAdoption.Id</span>
+            </div>
+        }
+        else
+        {
+            <div class="mb-3">
+                <label class="form-label">Pet Id:</label>
+                <InputNumber class="form-control" @bind-Value="currentAdoption.PetId" />
+            </div>
+        }
+
+        <div class="mb-3">
+            <label class="form-label">Requester Name:</label>
+            <InputText class="form-control" @bind-Value="currentAdoption.RequesterName" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Request Date:</label>
+            <InputDate class="form-control" @bind-Value="currentAdoption.RequestDate" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Status:</label>
+            @if (!isUpdating)
+            {
+                <InputSelect class="form-select" @bind-Value="currentAdoption.Status">
+                    <option value="Pending">Pending</option> // Only available option in Add mode
+                </InputSelect>
+            }
+            else
+            {
+                <InputSelect class="form-select" @bind-Value="currentAdoption.Status">
+                    <option value="">Select Status</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Cancelled">Cancelled</option>
+                </InputSelect>
+            }
+        </div>
+        <button type="submit" class="btn btn-primary">@((isUpdating ? "Update" : "Add") + " Adoption Request")</button>
+    </EditForm>
+}
+
+@code {
+    private List<AdoptionModel> adoptions;
+    private AdoptionModel currentAdoption = new AdoptionModel(); 
+    private bool isUpdating = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAdoptionsAsync();
+        ResetCurrentAdoption();
+    }
+
+    private async Task LoadAdoptionsAsync()
+    {
+        adoptions = await AdoptionService.GetAdoptionsAsync();
+    }
+
+    private async Task AddAdoption()
+    {
+        currentAdoption.Status = "Pending";
+        await AdoptionService.AddAdoptionAsync(currentAdoption);
+        ResetCurrentAdoption();
+        await LoadAdoptionsAsync();
+    }
+
+    private async Task UpdateAdoption()
+    {
+        await AdoptionService.UpdateAdoptionAsync(currentAdoption.Id, currentAdoption);
+        ResetCurrentAdoption();
+        isUpdating = false;
+        await LoadAdoptionsAsync();
+    }
+
+    private void LoadAdoptionForUpdate(AdoptionModel adoption)
+    {
+        currentAdoption = adoption;
+        isUpdating = true;
+    }
+
+    private async Task DeleteAdoption(int id)
+    {
+        await AdoptionService.DeleteAdoptionAsync(id);
+        await LoadAdoptionsAsync();
+    }
+
+    private void ResetCurrentAdoption()
+    {
+        currentAdoption = new AdoptionModel
+        {
+            Status = "Pending"
+        };
+        isUpdating = false;
+    }
+
+    private void ShowAddAdoptionForm()
+    {
+        ResetCurrentAdoption();
+        isUpdating = false;
+    }
+}
