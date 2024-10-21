@@ -56,5 +56,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Acknowledgments
 
 - Thanks to the contributors and the community for their support.
-- Special thanks to LazurdIT for providing the FluentOrm framework that simplifies data access in .NET applications.
+- Special thanks to ![LazurdIT](https://github.com/lazurdit) for providing the FluentOrm framework that simplifies data access in .NET applications.
 
