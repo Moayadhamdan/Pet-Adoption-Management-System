@@ -36,7 +36,7 @@ The Owners Page allows users to view and manage pet owners. Users can add new ow
 
 ![Owners Page](https://github.com/Moayadhamdan/Pet-Adoption-Management-System/blob/main/PetAdoption/Client/wwwroot/images/OwnersPage.png)
 
-### 4. Adoption Requests Page (if applicable)
+### 4. Adoption Requests Page
 
 This page displays adoption requests made by users, allowing for management and tracking of requests.
 
